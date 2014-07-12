@@ -7,6 +7,6 @@ package webdictionary;
 public class WebDictionary {
 
     public static void main(String[] args) {
-        
+        //Master
     }
 }
