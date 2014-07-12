@@ -25,13 +25,7 @@ public class WebDictionary {
     public static void createAndShowGui() {
         JFrame frame = new JFrame("dict.org");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().add(new JPanel() {
-
-            @Override
-            public Dimension getPreferredSize() {
-                return new Dimension(300, 300);
-            }
-        });
+        frame.getContentPane().add(new JPanelEx());
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);

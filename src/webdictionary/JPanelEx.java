@@ -1,5 +1,6 @@
 package webdictionary;
 
+import java.awt.Dimension;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
@@ -10,6 +11,7 @@ import javax.swing.JPanel;
 public class JPanelEx extends JPanel{
 
     public JPanelEx() {
+        setPreferredSize(new Dimension(300, 300));
         add(new JButton("Click"));
     }
 }
