@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 public class WebDictionary {
 
     public static void main(String[] args) {
+        //Master
         EventQueue.invokeLater(new Runnable() {
 
             @Override
