@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -60,13 +61,11 @@ public class JPanelEx extends JPanel {
     }
 
     private void init() {
-        inputField.addKeyListener(new KeyAdapter() {
+        inputField.addActionListener(new ActionListener() {
 
             @Override
-            public void keyTyped(KeyEvent e) {
-                if (e.getKeyChar() == KeyEvent.VK_ENTER) {
-                    submit.doClick();
-                }
+            public void actionPerformed(ActionEvent e) {
+                submit.doClick();
             }
         });
         JPopupMenu menu = new JPopupMenu();
