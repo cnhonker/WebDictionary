@@ -2,8 +2,9 @@ package webdictionary;
 
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 /**
  *
@@ -25,7 +26,16 @@ public class WebDictionary {
     public static void createAndShowGui() {
         JFrame frame = new JFrame("dict.org");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().add(new JPanelEx());
+        frame.setMinimumSize(new Dimension(350, 300));
+        final JPanelEx panel = new JPanelEx();
+        frame.getContentPane().add(panel);
+        frame.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+               panel.terminate();
+            }        
+        });
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
