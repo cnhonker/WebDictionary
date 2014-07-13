@@ -13,7 +13,9 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,12 +37,14 @@ import javax.swing.JTextField;
  */
 public class JPanelEx extends JPanel {
 
-    private Socket soc;
-    private BufferedWriter bw;
-    private BufferedReader br;
+    private static final SocketAddress ADDRESS = new InetSocketAddress("dict.org", 2628);
+    private static final int TIMEOUT = 15000;
+    private final Socket soc;
     private final JTextField inputField;
     private final JButton submit;
     private final JTextArea displayArea;
+    private BufferedWriter bw;
+    private BufferedReader br;
 
     public JPanelEx() {
         setLayout(new GridBagLayout());
@@ -49,7 +53,22 @@ public class JPanelEx extends JPanel {
         inputField = new JTextField();
         submit = new JButton(getSubmitAction());
         displayArea = new JTextArea();
-        final JPopupMenu menu = new JPopupMenu();
+        soc = new Socket();
+        init();
+        addToPanel();
+    }
+
+    private void init() {
+        inputField.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (e.getKeyChar() == KeyEvent.VK_ENTER) {
+                    submit.doClick();
+                }
+            }
+        });
+        JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(new AbstractAction("Clear") {
 
             @Override
@@ -66,15 +85,9 @@ public class JPanelEx extends JPanel {
                 }
             }
         });
-        inputField.addKeyListener(new KeyAdapter() {
+    }
 
-            @Override
-            public void keyTyped(KeyEvent e) {
-                if (e.getKeyChar() == KeyEvent.VK_ENTER) {
-                    submit.doClick();
-                }
-            }
-        });
+    private void addToPanel() {
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.BOTH;
         c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -142,15 +155,15 @@ public class JPanelEx extends JPanel {
     }
 
     private void connect() {
-        if (soc == null) {
+        if (!soc.isConnected()) {
             ExecutorService es = Executors.newCachedThreadPool();
             es.execute(new Runnable() {
 
                 @Override
                 public void run() {
                     try {
-                        soc = new Socket("dict.org", 2628);
-                        soc.setSoTimeout(15000);
+                        soc.connect(ADDRESS, TIMEOUT);
+                        soc.setSoTimeout(TIMEOUT);
                         soc.setKeepAlive(true);
                         br = new BufferedReader(new InputStreamReader(soc.getInputStream(), "UTF-8"));
                         bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
@@ -163,7 +176,7 @@ public class JPanelEx extends JPanel {
             });
             es.shutdown();
             try {
-                es.awaitTermination(15000, TimeUnit.MILLISECONDS);
+                es.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (InterruptedException ex) {
                 displayArea.append("Connection Failed");
                 throw new IllegalStateException("Connection Failed");
