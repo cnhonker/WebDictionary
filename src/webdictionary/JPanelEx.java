@@ -30,6 +30,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 
 /**
  *
@@ -106,6 +107,23 @@ public class JPanelEx extends JPanel {
         c.gridwidth = 2;
         add(new JScrollPane(displayArea), c);
     }
+    
+    private class Lookup extends SwingWorker<Object, Object> {
+
+        private String w;
+        
+        public Lookup(String word) {
+            w = word;
+        }
+
+        @Override
+        protected Object doInBackground() throws Exception {
+            write(w);
+            read();
+            return null;
+        }
+        
+    }
 
     private AbstractAction getSubmitAction() {
         AbstractAction action = new AbstractAction() {
@@ -115,8 +133,7 @@ public class JPanelEx extends JPanel {
                 connect();
                 String word = inputField.getText();
                 if (!word.isEmpty()) {
-                    write(word);
-                    read();
+                    new Lookup(word).execute();
                 }
                 inputField.setText("");
                 inputField.requestFocus();
@@ -155,8 +172,8 @@ public class JPanelEx extends JPanel {
     }
 
     private void connect() {
-        if (!soc.isConnected()) {
-            ExecutorService es = Executors.newCachedThreadPool();
+        if (!(soc.isConnected() && !soc.isClosed())) {                          
+            ExecutorService es = Executors.newCachedThreadPool();               
             es.execute(new Runnable() {
 
                 @Override
@@ -165,6 +182,7 @@ public class JPanelEx extends JPanel {
                         soc.connect(ADDRESS, TIMEOUT);
                         soc.setSoTimeout(TIMEOUT);
                         soc.setKeepAlive(true);
+                        soc.setTcpNoDelay(true);
                         br = new BufferedReader(new InputStreamReader(soc.getInputStream(), "UTF-8"));
                         bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
                         br.readLine();
