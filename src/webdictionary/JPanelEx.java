@@ -107,11 +107,12 @@ public class JPanelEx extends JPanel {
         c.gridwidth = 2;
         add(new JScrollPane(displayArea), c);
     }
-    
+
     private class Lookup extends SwingWorker<Object, Object> {
 
         private String w;
-        
+        private StringBuilder builder = new StringBuilder();
+
         public Lookup(String word) {
             w = word;
         }
@@ -122,7 +123,39 @@ public class JPanelEx extends JPanel {
             read();
             return null;
         }
-        
+
+        private void read() {
+            try {
+                for (String line = br.readLine(); line != null; line = br.readLine()) {
+                    if (line.startsWith("250 ")) {
+                        return;
+                    } else if (line.startsWith("552 ")) {
+                        builder.append("Not found!\r\n");
+                        return;
+                    } else if (line.matches("\\d\\d\\d .*")) {
+                    } else if (line.trim().equals(".")) {
+                    } else {
+                        builder.append(line + "\r\n");
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(JPanelEx.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        private void write(String word) {
+            try {
+                bw.write("DEFINE fd-eng-lat " + word + "\r\n");
+                bw.flush();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        @Override
+        protected void done() {
+            displayArea.append(builder.toString());
+        }
     }
 
     private AbstractAction getSubmitAction() {
@@ -143,37 +176,9 @@ public class JPanelEx extends JPanel {
         return action;
     }
 
-    private void read() {
-        try {
-            for (String line = br.readLine(); line != null; line = br.readLine()) {
-                if (line.startsWith("250 ")) {
-                    return;
-                } else if (line.startsWith("552 ")) {
-                    displayArea.append("Not found!\r\n");
-                    return;
-                } else if (line.matches("\\d\\d\\d .*")) {
-                } else if (line.trim().equals(".")) {
-                } else {
-                    displayArea.append(line + "\r\n");
-                }
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(JPanelEx.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void write(String word) {
-        try {
-            bw.write("DEFINE fd-eng-lat " + word + "\r\n");
-            bw.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     private void connect() {
-        if (!(soc.isConnected() && !soc.isClosed())) {                          
-            ExecutorService es = Executors.newCachedThreadPool();               
+        if (!(soc.isConnected() && !soc.isClosed())) {
+            ExecutorService es = Executors.newCachedThreadPool();
             es.execute(new Runnable() {
 
                 @Override
