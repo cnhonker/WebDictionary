@@ -1,12 +1,11 @@
 package webdictionary;
 
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
@@ -20,12 +19,14 @@ import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -39,6 +40,7 @@ import javax.swing.SwingWorker;
  */
 public class JPanelEx extends JPanel {
 
+    private static final Logger logger = Logger.getLogger("audit");
     private static final SocketAddress ADDRESS = new InetSocketAddress("dict.org", 2628);
     private static final int TIMEOUT = 15000;
     private final Socket soc;
@@ -47,6 +49,17 @@ public class JPanelEx extends JPanel {
     private final JTextArea displayArea;
     private BufferedWriter bw;
     private BufferedReader br;
+
+    static {
+        FileHandler fh;
+        try {
+            fh = new FileHandler("C:/err.log", true);
+            logger.addHandler(fh);
+        } catch (IOException | SecurityException ex) {
+            showExceptionPane(ex);
+            logger.log(Level.SEVERE, ex.getMessage());
+        }
+    }
 
     public JPanelEx() {
         setLayout(new GridBagLayout());
@@ -109,8 +122,8 @@ public class JPanelEx extends JPanel {
 
     private class Lookup extends SwingWorker<Object, Object> {
 
-        private String w;
-        private StringBuilder builder = new StringBuilder();
+        private final String w;
+        private final StringBuilder builder = new StringBuilder();
 
         public Lookup(String word) {
             w = word;
@@ -138,7 +151,8 @@ public class JPanelEx extends JPanel {
                     }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(JPanelEx.class.getName()).log(Level.SEVERE, null, ex);
+                showExceptionPane(ex);
+                logger.log(Level.SEVERE, ex.getMessage());
             }
         }
 
@@ -147,7 +161,8 @@ public class JPanelEx extends JPanel {
                 bw.write("DEFINE fd-eng-lat " + word + "\r\n");
                 bw.flush();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                showExceptionPane(ex);
+                logger.log(Level.SEVERE, ex.getMessage());
             }
         }
 
@@ -176,7 +191,7 @@ public class JPanelEx extends JPanel {
     }
 
     private void connect() {
-        if (!(soc.isConnected() && !soc.isClosed())) {
+        if (!isOnline()) {
             ExecutorService es = Executors.newCachedThreadPool();
             es.execute(new Runnable() {
 
@@ -191,8 +206,8 @@ public class JPanelEx extends JPanel {
                         bw = new BufferedWriter(new OutputStreamWriter(soc.getOutputStream()));
                         br.readLine();
                     } catch (IOException ex) {
-                        displayArea.append("Connection Failed\n");
-                        throw new IllegalStateException("Connection Failed");
+                        showExceptionPane(ex);
+                        logger.log(Level.SEVERE, ex.getMessage());
                     }
                 }
             });
@@ -200,21 +215,38 @@ public class JPanelEx extends JPanel {
             try {
                 es.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (InterruptedException ex) {
-                displayArea.append("Connection Failed");
-                throw new IllegalStateException("Connection Failed");
+                showExceptionPane(ex);
+                logger.log(Level.SEVERE, ex.getMessage());
             }
         }
     }
 
+    private static void showExceptionPane(Exception ex) {
+        EventQueue.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                JOptionPane.showMessageDialog(null, ex.getClass().getName());
+            }
+        });
+    }
+
+    private boolean isOnline() {
+        return (soc.isConnected() && !soc.isClosed());
+    }
+
     public void terminate() {
         try {
-            if (soc != null) {
+            if (bw != null) {
                 bw.write("QUIT\r\n");
                 bw.flush();
+            }
+            if (soc != null && isOnline()) {
                 soc.close();
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+            logger.log(Level.SEVERE, ex.getMessage());
         }
     }
 }
